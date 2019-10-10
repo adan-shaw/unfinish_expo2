@@ -1,0 +1,62 @@
+1.如何安装syslog?
+	syslog 在linux 里面, 完整的软件名是rsyslog,
+	syslog 是一种通用unix 日志协议标准, 
+	而实际基于syslog 标准的软件, 有很多种,
+	rsyslog 就是最常用的一种, 即直接在/var/spool 中生成日志文件.
+	(syslogd 是默认的syslog 版本, 也是直接在/var/log 中生成日志文件.)
+
+	还有syslog-ng, 直接将syslog 数据导入到指定的数据库中,
+	这个数据库可以是mysql, psql 等关系型数据库,
+	syslog-ng 配置更为复杂, 
+	因为首先你需要配置mysql/psql 的链接信息,
+	其次你也需要配置syslog-ng 的导出端口信息.(这个下面会详解)
+
+	因此, 安装syslog, 一般使用rsyslog
+	apt-get install rsyslog
+	apt autoremove # 当有依赖问题的时候, 可以执行这个语句清除
+	systemctl enable rsyslog
+	systemctl start rsyslog
+	systemctl status rsyslog
+	(ps: 安装rsyslog 之后, 默认的syslog.service 就是指: rsyslog !!)
+
+
+
+2.配置rsyslog:
+	无论你是使用rsyslog直接生成log 文件,
+	还是使用syslog-ng直接将syslog数据写入到数据库中,
+	你都可以将syslog service 配置成: 本地模式, 或者远程模式.
+
+	本地模式, 远程模式, 道理都是一样的, 
+	那就是syslog service 的ip 和端口问题.
+	
+	本地模式, 那ip = 0.0.0.0 / 127.0.0.1 比较安全, 
+	服务器也不需要做太多的安全工作, 
+	直接指定"0.0.0.0/514"的tcp/udp 数据可以通过即可
+	(具体使用tcp/udp 还是你自己决定的)
+
+	远程模式, 你必须让syslog 数据, 通过iptables.
+	你也必须要用iptables 来拦截恶意数据.
+	其实也是ip + 端口的问题,
+	如果是rsyslog 主服务器: 
+		必须知道从服务器的ip 地址(端口可能是随机的),
+		这样rsyslog 服务器就可以根据从服务器ip地址来排除其它主机发过来的数据.
+	如果是rsyslog 从服务器:
+		必须知道主服务器的ip地址+端口,
+		这样从服务器才能找到rsyslog主服务器的位置.
+
+	详细, 情况rsyslog 的配置文件:
+	/etc/rsyslog.conf
+	/etc/rsyslog.d/*
+	(一般都是使用默认配置即可, 但是应用程序要使用rsyslog,
+	 则需要开启tcp 模块, 否则只能本地file log)
+
+
+
+3.卸载rsysylog:
+	apt-get remove --purge rsyslog --force-yes -y
+
+
+
+4.安装syslog-ng
+apt-get install libdbi1 libdbd-mysql syslog-ng-core syslog-ng-mod-sql
+apt-get install syslog-ng-mod-*
